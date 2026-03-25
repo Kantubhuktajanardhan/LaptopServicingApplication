@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Laptop Service Dashboard</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f5f7fa;
+        }
+        .card {
+            border-radius: 12px;
+        }
+        .header {
+            background: linear-gradient(135deg, #4e73df, #1cc88a);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .table thead {
+            background-color: #4e73df;
+            color: white;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 8px;
+            color: white;
+        }
+        .Received { background-color: #6c757d; }
+        .Repairing { background-color: #ffc107; }
+        .Ready { background-color: #0dcaf0; }
+        .Delivered { background-color: #198754; }
+
+        .PAID { background-color: #198754; }
+        .PARTIAL { background-color: #ffc107; }
+        .UNPAID { background-color: #dc3545; }
+    </style>
+</head>
+
+<body>
+
+<div class="container mt-4">
+    
+    <div class="text-end mb-2">
+    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+    </div>
+    
+    <!-- HEADER -->
+    <div class="header text-center mb-4">
+        <h2>💻 Laptop Service Management</h2>
+        <p>Track Repairs, Payments & Status</p>
+    </div>
+
+    <!-- CREATE ORDER FORM -->
+    <div class="card p-4 mb-4 shadow">
+        <h4>Create New Order</h4>
+        <form action="/create-order" method="post">
+
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <input type="text" id="phone" name="customerPhone" class="form-control" placeholder="Customer Phone" required>
+                </div>
+
+                <div class="col-md-4 mb-2">
+                    <input type="text" name="laptopModel" class="form-control" placeholder="Laptop Model" required>
+                </div>
+
+                <div class="col-md-4 mb-2">
+                    <input type="text" name="problemDescription" class="form-control" placeholder="Problem" required>
+                </div>
+
+                <div class="col-md-4 mb-2">
+                    <input type="number" step="0.01" name="totalAmount" class="form-control" placeholder="Total Amount">
+                </div>
+
+                <div class="col-md-4 mb-2">
+                    <input type="number" step="0.01" name="paidAmount" class="form-control" placeholder="Paid Amount">
+                </div>
+                
+                <div class="col-md-4 mb-2">
+    				<input type="text" id="name" name="customerName" class="form-control" placeholder="Customer Name">
+				</div>
+
+				<div class="col-md-4 mb-2">
+    				<input type="date" id="dob" name="customerDob" class="form-control">
+				</div>
+
+                <div class="col-md-4 mb-2">
+                    <button class="btn btn-primary w-100">Create Order</button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+    <div class="text-end mb-3">
+    <a href="/closed-orders" class="btn btn-secondary">
+        View Closed Orders
+    </a>
+    
+    <a href="/revenue" class="btn btn-success">
+    View Revenue
+    </a>
+    
+     <a href="/reports" class="btn btn-primary">
+        Reports
+    </a>
+    
+    <a href="/customers" class="btn btn-dark ms-2">
+    Customers
+    </a>
+    
+</div>
+    <!-- FILTER -->
+    <div class="mb-3 text-center">
+        <a href="/" class="btn btn-secondary">All</a>
+        <a href="/filter?status=Received" class="btn btn-dark">Received</a>
+        <a href="/filter?status=Repairing" class="btn btn-warning">Repairing</a>
+        <a href="/filter?status=Ready" class="btn btn-info">Ready</a>
+        <a href="/filter?status=Delivered" class="btn btn-success">Delivered</a>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card p-3 shadow">
+        <h4>All Orders</h4>
+        
+        <form action="/search" method="get" class="mb-3 d-flex">
+        <input type="text" name="phone" class="form-control me-2" placeholder="Search by Phone">
+        <button class="btn btn-primary">Search</button>
+        </form>
+        
+        
+        
+       <form action="/search-between-dates" method="get" class="mb-3 row">
+       <div class="col-md-4">
+       <input type="date" name="startDate" class="form-control" required>
+       </div>
+       <div class="col-md-4">
+       <input type="date" name="endDate" class="form-control" required>
+       </div>
+       <div class="col-md-4">
+       <button class="btn btn-success w-100">Search Between Dates</button>
+       </div>
+       </form>
+        
+<div class="row mb-3 text-center">
+
+    <div class="col-md-4">
+        <div class="card p-3 bg-primary text-white">
+            <h5>Total Orders</h5>
+            <h3 th:text="${totalOrders}"></h3>
+        </div>
+    </div>
+
+    
+
+</div>
+
+        <table class="table table-bordered table-hover mt-3">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Phone</th>
+                    <th>Model</th>
+                    <th>Problem</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Payment</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+    <tr th:each="o : ${orders}">
+    <td th:text="${o.id}"></td>
+    <td th:text="${o.customer != null ? o.customer.phone : o.customerPhone}"></td>
+    <td th:text="${o.laptopModel}"></td>
+    <td>
+    <a th:href="@{/order-details(id=${o.id})}" 
+       class="btn btn-sm btn-info">View</a>
+    </td>
+
+    <!-- STATUS -->
+    
+    <td>
+        <span th:text="${o.status}"
+              th:class="'status-badge ' + ${o.status}"></span>
+
+        <div class="mt-1" th:if="${!o.closed}">
+            <a th:href="@{/update-status(id=${o.id}, status='Repairing')}" class="btn btn-sm btn-warning">Repairing</a>
+            <a th:href="@{/update-status(id=${o.id}, status='Ready')}" class="btn btn-sm btn-info">Ready</a>
+            <a th:href="@{/update-status(id=${o.id}, status='Delivered')}" class="btn btn-sm btn-success">Delivered</a>
+            
+        </div>
+    </td>
+
+    <td th:text="${o.totalAmount}"></td>
+    <td th:text="${o.paidAmount}"></td>
+
+    <!-- PAYMENT -->
+    <td>
+        <span th:text="${o.paymentStatus}"
+              th:class="'status-badge ' + ${o.paymentStatus}"></span>
+
+        <form action="/add-payment" method="get" class="mt-1 d-flex" th:if="${!o.closed}">
+            <input type="hidden" name="id" th:value="${o.id}">
+            <input type="number" step="0.01" name="amount" th:attr="max=${o.totalAmount - (o.paidAmount ?: 0)}" placeholder="Add ₹" class="form-control form-control-sm me-1">
+            <button class="btn btn-sm btn-primary">+</button>
+        </form>
+    </td>
+    
+    <td th:text="${#temporals.format(o.orderDate, 'dd-MM-yyyy')}"></td>
+    <!-- DELETE -->
+   <td>
+
+    <!-- DELETE (ADMIN ONLY) -->
+    <span sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/delete(id=${o.id})}" 
+           class="btn btn-danger btn-sm"
+           onclick="return confirm('Delete this order?')">
+           Delete
+        </a>
+    </span>
+
+   <span th:if="${!o.closed}">
+    <a th:href="@{/close-order(id=${o.id})}" 
+       class="btn btn-dark btn-sm"
+       onclick="return confirm('Close this order?')">
+       Close
+    </a>
+</span>
+
+</td>
+</tr>
+</tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<div class="text-center mt-3">
+    <a th:if="${currentPage > 0}" 
+       th:href="@{/(page=${currentPage - 1})}" 
+       class="btn btn-secondary">Prev</a>
+
+    <span class="mx-2"><span th:text="${currentPage != null ? currentPage + 1 : 1}"></span></span>
+
+    <a th:if="${currentPage < totalPages - 1}" 
+       th:href="@{/(page=${currentPage + 1})}" 
+       class="btn btn-secondary">Next</a>
+</div>
+
+<script>
+document.getElementById("phone").addEventListener("blur", function () {
+
+    let phone = this.value;
+
+    if (phone.length < 5) return;
+
+    fetch("/get-customer?phone=" + phone)
+        .then(response => response.json())
+        .then(data => {
+            if (data) {
+                document.getElementById("name").value = data.name || "";
+                document.getElementById("dob").value = data.dob || "";
+            } else {
+                document.getElementById("name").value = "";
+                document.getElementById("dob").value = "";
+            }
+        });
+});
+</script>
+
+
+</body>
+</html>
